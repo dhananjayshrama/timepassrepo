@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { JOB_ROLES, DIFFICULTIES, TOTAL_QUESTIONS } from "../prompts/interviewPrompts.js";
+import { DIFFICULTIES, TOTAL_QUESTIONS } from "../prompts/interviewPrompts.js";
 import { generateQuestion } from "../services/langchainService.js";
 import { evaluateAnswer, createFinalReport } from "../services/evaluationService.js";
 
@@ -19,12 +19,13 @@ export async function startInterview(req, res) {
   try {
     const { name, role, difficulty } = req.body ?? {};
     const cleanName = String(name || "").trim().slice(0, 50);
+    const cleanRole = String(role || "").trim().slice(0, 60);
 
     if (!cleanName) {
       return res.status(400).json({ error: "name is required" });
     }
-    if (!JOB_ROLES.includes(role)) {
-      return res.status(400).json({ error: "Invalid role", allowed: JOB_ROLES });
+    if (!cleanRole) {
+      return res.status(400).json({ error: "role is required" });
     }
     if (!DIFFICULTIES.includes(difficulty)) {
       return res.status(400).json({ error: "Invalid difficulty", allowed: DIFFICULTIES });
@@ -34,7 +35,7 @@ export async function startInterview(req, res) {
 
     const question = await generateQuestion({
       name: cleanName,
-      role,
+      role: cleanRole,
       difficulty,
       history: [],
       questionNumber: 1,
@@ -44,7 +45,7 @@ export async function startInterview(req, res) {
     const sessionId = randomUUID();
     sessions.set(sessionId, {
       name: cleanName,
-      role,
+      role: cleanRole,
       difficulty,
       currentQuestion: question,
       history: [], // answered questions with their scores
